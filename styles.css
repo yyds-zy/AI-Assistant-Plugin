@@ -18,16 +18,36 @@ body {
   align-items: center;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 .title {
   font-weight: 600;
   color: #333;
 }
 
-#settings-btn {
+#settings-btn, #clear-btn {
   background: none;
   border: none;
   cursor: pointer;
   font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+#settings-btn:hover, #clear-btn:hover {
+  background-color: #f0f0f0;
+}
+
+#clear-btn {
+  color: #dc3545;
+}
+
+#clear-btn:hover {
+  background-color: #fee;
 }
 
 /* 视图切换逻辑 */
