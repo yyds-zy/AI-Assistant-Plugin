@@ -9,14 +9,17 @@
     "128": "icon128.png"
   },
   "action": {
-    "default_popup": "popup.html",
     "default_icon": "icon16.png",
     "default_title": "打开 AI 助手"
   },
   "background": {
     "service_worker": "background.js"
   },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
   "permissions": [
+    "sidePanel",
     "storage",
     "contextMenus"
   ]

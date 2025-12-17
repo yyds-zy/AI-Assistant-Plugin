@@ -1,37 +1,24 @@
-// 封装创建菜单的逻辑
-function initContextMenu() {
-  chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: "translate-ai",
-      title: "使用 AI 翻译/解释: '%s'", // %s 会自动显示你选中的文字
-      contexts: ["selection"]
-    });
-  });
-}
-
-// 插件安装、更新时运行
+// 创建右键菜单
 chrome.runtime.onInstalled.addListener(() => {
-  initContextMenu();
+  chrome.contextMenus.create({
+    id: "translate-sidebar",
+    title: "使用 AI 翻译: '%s'",
+    contexts: ["selection"]
+  });
 });
 
-// 浏览器启动时运行，确保菜单不丢失
-chrome.runtime.onStartup.addListener(() => {
-  initContextMenu();
-});
-
-// 监听点击事件
+// 监听菜单点击 -> 强制开启侧边栏
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "translate-ai") {
-    const text = info.selectionText;
-    
-    // 存入 storage
-    chrome.storage.local.set({ 
-      pendingText: text,
-      lastAction: 'translate' 
-    }, () => {
-      // 在图标显示黄色提示，告诉用户该点开插件看结果了
-      chrome.action.setBadgeText({ text: "!" });
-      chrome.action.setBadgeBackgroundColor({ color: "#FF9800" });
-    });
+  if (info.menuItemId === "translate-sidebar") {
+    // 1. 存下文字
+    chrome.storage.local.set({ pendingText: info.selectionText });
+
+    // 2. 关键：在当前窗口打开侧边栏
+    chrome.sidePanel.open({ windowId: tab.windowId });
   }
+});
+
+// 监听点击插件图标 -> 也打开侧边栏
+chrome.action.onClicked.addListener((tab) => {
+  chrome.sidePanel.open({ windowId: tab.windowId });
 });

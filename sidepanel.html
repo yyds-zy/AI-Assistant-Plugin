@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body style="width: 100%; height: 100vh;"> <div class="header">
+    <span class="title">GLM-4.5 侧边栏助手</span>
+    <button id="settings-btn">⚙️</button>
+  </div>
+
+  <div id="setup-view" class="view hidden">
+    <div class="setup-content">
+      <h3>配置 API Key</h3>
+      <input type="password" id="api-key-input" placeholder="输入 API Key">
+      <button id="save-key-btn" class="primary-btn">保存</button>
+    </div>
+  </div>
+
+  <div id="chat-view" class="view">
+    <div id="chat-history"></div>
+    <div class="input-area">
+      <textarea id="user-input" placeholder="输入问题..." rows="1"></textarea>
+      <button id="send-btn">发送</button>
+    </div>
+  </div>
+
+  <script src="marked.min.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
