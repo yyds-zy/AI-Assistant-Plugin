@@ -48,6 +48,39 @@ userInput.addEventListener('keydown', (e) => {
   }
 });
 
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  chrome.storage.local.get(['zhipu_api_key', 'pendingText'], (result) => {
+    // 1. 处理 API Key 视图
+    if (result.zhipu_api_key) {
+      showChatView();
+      
+      // 2. 检查是否有来自右键菜单的待处理文本
+      if (result.pendingText) {
+        handleContextMenuText(result.pendingText);
+      }
+    } else {
+      showSetupView();
+    }
+  });
+});
+
+// 处理右键传来的文本
+async function handleContextMenuText(text) {
+  // 清除待处理状态和 Badge
+  chrome.storage.local.remove('pendingText');
+  chrome.action.setBadgeText({ text: "" });
+
+  // 构造 Prompt
+  const prompt = `请解释或翻译以下这段话：\n\n"${text}"`;
+  
+  // 模拟发送消息
+  userInput.value = prompt;
+  handleSendMessage();
+}
+
+
 // 处理消息发送（流式版本）
 async function handleSendMessage() {
   const text = userInput.value.trim();

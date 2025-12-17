@@ -13,7 +13,11 @@
     "default_icon": "icon16.png",
     "default_title": "打开 AI 助手"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "permissions": [
-    "storage"
+    "storage",
+    "contextMenus"
   ]
 }
