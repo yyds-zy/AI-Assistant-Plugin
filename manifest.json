@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "AI 悬浮助手插件",
+  "version": "1.0",
+  "description": "基于智谱 AI 的桌面悬浮助手浏览器插件。",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon16.png",
+    "default_title": "打开 AI 助手"
+  },
+  "permissions": [
+    "storage"
+  ]
+}
