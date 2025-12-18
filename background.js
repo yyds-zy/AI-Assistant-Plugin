@@ -22,3 +22,22 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.action.onClicked.addListener((tab) => {
   chrome.sidePanel.open({ windowId: tab.windowId });
 });
+
+// 监听快捷键命令
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "open-sidepanel") {
+    // 获取当前活动标签页的窗口ID
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.sidePanel.open({ windowId: tabs[0].windowId });
+      }
+    });
+  } else if (command === "close-sidepanel") {
+    // 隐藏侧边栏 - 由于Chrome API限制，我们可以通过聚焦到当前页面来模拟隐藏效果
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.sidePanel.close({ windowId: tabs[0].windowId });
+      }
+    });
+  }
+});

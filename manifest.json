@@ -22,5 +22,19 @@
     "sidePanel",
     "storage",
     "contextMenus"
-  ]
+  ],
+  "commands": {
+    "open-sidepanel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L"
+      },
+      "description": "打开AI助手侧边栏"
+    },
+    "close-sidepanel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+H"
+      },
+      "description": "隐藏AI助手侧边栏"
+    }
+  }
 }
