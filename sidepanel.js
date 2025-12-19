@@ -478,8 +478,9 @@ function createWeekWeatherCard(location, weekData) {
 
 // 智能天气查询函数
 async function handleWeatherQuery(text) {
+    console.log('原始查询文本:', text);
     // 检查是否包含天气相关关键词
-    const weatherKeywords = ['天气', '气温', '温度', '预报', '晴', '雨', '雪', '风', '云'];
+    const weatherKeywords = ['天气', '气温', '温度', '预报'];
     const hasWeatherKeyword = weatherKeywords.some(keyword => text.includes(keyword));
     
     if (!hasWeatherKeyword) {
@@ -500,6 +501,13 @@ async function handleWeatherQuery(text) {
 // 使用AI分析用户天气查询意图
 async function analyzeWeatherIntent(text) {
     try {
+        // 从chrome.storage获取API Key
+        const { zhipu_api_key: apiKey } = await chrome.storage.local.get(['zhipu_api_key']);
+        if (!apiKey) {
+            console.error('未找到API Key，使用备用方案');
+            return fallbackAnalyzeIntent(text);
+        }
+        
         // 构建分析提示词
         const analysisPrompt = `请分析以下天气查询语句，提取以下信息：
 1. 省份（sheng）
@@ -541,26 +549,27 @@ async function analyzeWeatherIntent(text) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
+                'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
                 model: API_MODEL,
-                messages: [{role: 'user', content: analysisPrompt}],
-                temperature: 0.1,
-                max_tokens: 200
+                messages: [
+                    { role: "system", content: "你是一个专业的天气查询意图分析助手" },
+                    { role: "user", content: analysisPrompt }
+                ],
+                temperature: 0.3
             })
         });
 
         const result = await response.json();
         const analysisResult = JSON.parse(result.choices[0].message.content.trim());
         
-        return {
-            province: analysisResult.province,
-            city: analysisResult.city,
-            district: analysisResult.district || null,
-            timeType: analysisResult.timeType || 'today',
-            intent: analysisResult.intent
-        };
+        // 如果无法确定省份或城市，返回null
+        if (!analysisResult.province || !analysisResult.city) {
+            return fallbackAnalyzeIntent(text);
+        }
+        
+        return analysisResult;
         
     } catch (error) {
         console.error('AI意图分析失败，使用备用方案:', error);
