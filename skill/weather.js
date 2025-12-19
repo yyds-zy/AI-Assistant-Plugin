@@ -292,7 +292,7 @@ function createWeekWeatherCard(location, weekData) {
  * @param {Object} apiConfig - API配置对象，包含BASE_API_URL, API_MODEL, API_KEY（可选）
  * @returns {Promise<string|Element|null>} - 返回天气信息或null
  */
-async function handleWeatherQuery(text, apiConfig = null) {
+async function handleWeatherQuery(text, weatherContext = null, apiConfig = null) {
     // 检查是否包含天气相关关键词
     const weatherKeywords = ['天气', '气温', '温度', '预报', '晴', '雨', '雪', '风', '云'];
     const hasWeatherKeyword = weatherKeywords.some(keyword => text.includes(keyword));
@@ -320,7 +320,7 @@ async function handleWeatherQuery(text, apiConfig = null) {
     }
     
     // 使用AI分析用户意图和提取地理位置
-    const userIntent = await analyzeWeatherIntent(text, apiConfigToUse);
+    const userIntent = await analyzeWeatherIntent(text, weatherContext, apiConfigToUse);
     
     // 如果AI分析失败，直接返回错误信息
     if (!userIntent.province || !userIntent.city) {
@@ -337,10 +337,11 @@ async function handleWeatherQuery(text, apiConfig = null) {
 /**
  * 使用AI分析用户天气查询意图
  * @param {string} text - 用户输入的文本
+ * @param {Array} weatherContext - 天气相关的历史上下文
  * @param {Object} apiConfig - API配置对象，包含BASE_API_URL, API_MODEL, API_KEY
  * @returns {Promise<Object>} - 返回用户意图对象
  */
-async function analyzeWeatherIntent(text, apiConfig) {
+async function analyzeWeatherIntent(text, weatherContext, apiConfig) {
     try {
         // 检查apiConfig是否存在
         if (!apiConfig || !apiConfig.API_KEY || !apiConfig.BASE_API_URL) {
@@ -354,15 +355,23 @@ async function analyzeWeatherIntent(text, apiConfig) {
             };
         }
         
-        // 构建分析提示词
-        const analysisPrompt = `请分析以下天气查询语句，提取以下信息：
+        // 构建系统提示词
+        const systemPrompt = `请分析用户的天气查询语句，提取相关信息。如果用户使用了省略表达（如"明天呢？"），请根据历史上下文推断完整意图。
+
+历史上下文（如果有）：
+${weatherContext && weatherContext.length > 0 ? 
+    weatherContext.map((msg, index) => 
+        `${index + 1}. ${msg.role === 'user' ? '用户' : '助手'}: ${msg.content}`
+    ).join('\n') : 
+    '无'
+}
+
+分析规则：
 1. 省份（sheng）
 2. 城市（place）
 3. 区县（district，可选）
 4. 时间类型（timeType）：today/tomorrow/week
 5. 用户意图描述
-
-查询语句："${text}"
 
 请严格按照以下JSON格式返回结果，不要添加任何额外内容：
 {"province":"省份名称","city":"城市名称","district":"区县名称或null","timeType":"today/tomorrow/week","intent":"用户意图描述"}
@@ -390,6 +399,12 @@ async function analyzeWeatherIntent(text, apiConfig) {
 输入："海淀区今天天气"
 输出：{"province":"北京","city":"北京","district":"海淀区","timeType":"today","intent":"查询海淀区今日天气"}`;
 
+        // 构建API请求的消息数组
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: text }
+        ];
+
         // 调用AI API进行分析
         const response = await fetch(apiConfig.BASE_API_URL, {
             method: 'POST',
@@ -399,7 +414,7 @@ async function analyzeWeatherIntent(text, apiConfig) {
             },
             body: JSON.stringify({
                 model: apiConfig.API_MODEL,
-                messages: [{role: 'user', content: analysisPrompt}],
+                messages: messages,
                 temperature: 0.1,
                 max_tokens: 500 // 增加max_tokens避免内容被截断
             })

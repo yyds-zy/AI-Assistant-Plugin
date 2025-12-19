@@ -115,18 +115,20 @@ async function handleSendMessage(overrideText = null) {
     let weatherResult = null;
     try {
         // 使用全局对象调用天气模块
-        weatherResult = await WeatherModule.handleWeatherQuery(text);
+        // 获取历史消息中的天气类型记录作为上下文
+        const weatherContext = getWeatherContextFromHistory();
+        weatherResult = await WeatherModule.handleWeatherQuery(text, weatherContext);
     } catch (error) {
         console.error('天气模块调用失败:', error);
     }
     
     if (weatherResult) {
         // 是天气查询，直接显示天气结果
-        appendMessage('ai', weatherResult);
+        appendMessage('ai', weatherResult, 'weather');
         
-        // 将用户消息和AI回复添加到上下文
-        conversationContext.push({ role: "user", content: text });
-        conversationContext.push({ role: "assistant", content: weatherResult });
+        // 将用户消息和AI回复添加到上下文（标记为weather类型）
+        conversationContext.push({ role: "user", content: text, type: "weather" });
+        conversationContext.push({ role: "assistant", content: weatherResult, type: "weather" });
         
         // 保存更新后的上下文和历史记录
         saveConversationHistory();
@@ -134,8 +136,8 @@ async function handleSendMessage(overrideText = null) {
     }
 
     // 不是天气查询，继续原有的AI对话流程
-    // 添加用户消息到上下文
-    conversationContext.push({ role: "user", content: text });
+    // 添加用户消息到上下文（标记为chat类型）
+    conversationContext.push({ role: "user", content: text, type: "chat" });
 
     const { zhipu_api_key: apiKey } = await chrome.storage.local.get(['zhipu_api_key']);
     if (!apiKey) {
@@ -148,6 +150,9 @@ async function handleSendMessage(overrideText = null) {
     bubble.innerHTML = '<span class="loading">正在思考...</span>';
 
     try {
+        // 普通聊天时，只获取 chat 类型的历史记录作为上下文
+        const chatContext = conversationContext.filter(msg => msg.type === "chat");
+        
         const response = await fetch(BASE_API_URL, {
             method: 'POST',
             headers: {
@@ -156,7 +161,7 @@ async function handleSendMessage(overrideText = null) {
             },
             body: JSON.stringify({
                 model: API_MODEL,
-                messages: conversationContext, // 发送完整的对话上下文
+                messages: chatContext, // 只发送 chat 类型的对话上下文
                 stream: true
             })
         });
@@ -197,8 +202,8 @@ async function handleSendMessage(overrideText = null) {
             }
         }
         
-        // 将AI回复添加到上下文
-        conversationContext.push({ role: "assistant", content: fullContent });
+        // 将AI回复添加到上下文（标记为chat类型）
+        conversationContext.push({ role: "assistant", content: fullContent, type: "chat" });
         
         // 保存更新后的上下文和历史记录
         saveConversationHistory();
@@ -208,12 +213,30 @@ async function handleSendMessage(overrideText = null) {
     }
 }
 
+// 从历史上下文获取天气类型的消息
+function getWeatherContextFromHistory() {
+    return conversationContext.filter(msg => msg.type === "weather");
+}
+
 // 加载历史聊天记录
 function loadChatHistory(history) {
     chatHistory.innerHTML = '';
-    history.forEach(msg => {
-        appendMessage(msg.role, msg.content);
-    });
+    conversationContext = []; // 重置对话上下文
+    
+    if (history && history.length > 0) {
+        history.forEach(msg => {
+            const type = msg.type || 'chat'; // 获取消息类型，默认chat
+            appendMessage(msg.role, msg.content, type);
+            
+            // 将消息添加到对话上下文（包含类型）
+            conversationContext.push({
+                role: msg.role,
+                content: msg.content,
+                type: type
+            });
+        });
+    }
+    scrollToBottom();
 }
 
 // 保存对话历史和上下文
@@ -224,7 +247,8 @@ function saveConversationHistory() {
         const role = msg.classList.contains('user') ? 'user' : 
                      msg.classList.contains('ai') ? 'assistant' : 'system';
         const content = msg.querySelector('.bubble').innerText;
-        history.push({ role, content });
+        const type = msg.dataset.type || 'chat'; // 默认类型为chat
+        history.push({ role, content, type });
     });
     
     chrome.storage.local.set({
@@ -233,9 +257,10 @@ function saveConversationHistory() {
     });
 }
 
-function appendMessage(role, content) {
+function appendMessage(role, content, type = 'chat') {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${role}`;
+    msgDiv.dataset.type = type; // 使用data属性存储消息类型
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     
