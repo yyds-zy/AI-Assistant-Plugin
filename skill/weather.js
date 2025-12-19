@@ -480,9 +480,12 @@ ${weatherContext && weatherContext.length > 0 ?
                 };
             }
             
+            // 如果只有省份信息，将城市字段设置为与省份相同
+            const province = analysisResult.province;
+            const city = analysisResult.city || province;
             return {
-                province: analysisResult.province,
-                city: analysisResult.city,
+                province: province,
+                city: city,
                 district: analysisResult.district || null,
                 timeType: analysisResult.timeType || 'today',
                 intent: analysisResult.intent
@@ -501,9 +504,18 @@ ${weatherContext && weatherContext.length > 0 ?
                     
                     if (analysisResult.province || analysisResult.city) {
                         console.log('AI意图分析: 成功修复截断的JSON', analysisResult);
+                        // 如果只有省份信息，将城市字段设置为与省份相同
+                        let province = analysisResult.province;
+                        let city = analysisResult.city || province;
+                        
+                        // 如果省份包含"省"字且城市与省份去掉"省"字后相同，则省略"省"字
+                        if (province && city && province.includes('省') && city === province.replace('省', '')) {
+                            province = province.replace('省', '市');
+                        }
+                        
                         return {
-                            province: analysisResult.province,
-                            city: analysisResult.city,
+                            province: province,
+                            city: city,
                             district: analysisResult.district || null,
                             timeType: analysisResult.timeType || 'today',
                             intent: analysisResult.intent || '修复后的天气查询'
@@ -521,9 +533,18 @@ ${weatherContext && weatherContext.length > 0 ?
                 const districtMatch = aiResponseContent.match(/区县是"([^"]+)"/);
                 const timeTypeMatch = aiResponseContent.match(/时间类型是"([^"]+)"/);
                 
+                // 如果只有省份信息，将城市字段设置为与省份相同
+                let province = provinceMatch ? provinceMatch[1] : null;
+                let city = cityMatch ? cityMatch[1] : province;
+                
+                // 如果省份包含"省"字且城市与省份去掉"省"字后相同，则省略"省"字
+                if (province && city && province.includes('省') && city === province.replace('省', '')) {
+                    province = province.replace('省', '市');
+                }
+                
                 const extractedInfo = {
-                    province: provinceMatch ? provinceMatch[1] : null,
-                    city: cityMatch ? cityMatch[1] : null,
+                    province: province,
+                    city: city,
                     district: districtMatch ? districtMatch[1] : null,
                     timeType: timeTypeMatch ? timeTypeMatch[1] : 'today',
                     intent: '从文本提取的天气查询'
