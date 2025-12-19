@@ -1,4 +1,4 @@
-const API_MODEL = 'glm-4.5-flash';
+const API_MODEL = 'glm-4.6v-flash';
 const BASE_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 
 // DOM元素引用 - 将在DOMContentLoaded中初始化
