@@ -23,6 +23,9 @@
     "storage",
     "contextMenus"
   ],
+  "host_permissions": [
+    "https://api.mymzf.com/*"
+  ],
   "commands": {
     "toggle-sidepanel": {
       "suggested_key": {

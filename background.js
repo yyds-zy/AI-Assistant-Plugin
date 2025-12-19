@@ -8,13 +8,26 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "使用 AI 翻译: '%s'",
     contexts: ["selection"]
   });
+  // 添加中译英右键菜单
+  chrome.contextMenus.create({
+    id: "translate-to-english",
+    title: "中译英: '%s'",
+    contexts: ["selection"]
+  });
 });
 
 // 监听菜单点击 -> 强制开启侧边栏
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "translate-sidebar") {
     // 1. 存下文字
-    chrome.storage.local.set({ pendingText: info.selectionText });
+    chrome.storage.local.set({ pendingText: info.selectionText, pendingAction: "ai_translate" });
+
+    // 2. 关键：在当前窗口打开侧边栏
+    chrome.sidePanel.open({ windowId: tab.windowId });
+    sidePanelOpen = true;
+  } else if (info.menuItemId === "translate-to-english") {
+    // 1. 存下文字和翻译类型
+    chrome.storage.local.set({ pendingText: info.selectionText, pendingAction: "translate_to_english" });
 
     // 2. 关键：在当前窗口打开侧边栏
     chrome.sidePanel.open({ windowId: tab.windowId });
